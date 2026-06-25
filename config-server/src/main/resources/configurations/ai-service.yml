@@ -1,0 +1,31 @@
+server:
+  port: 8084
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ai_db
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:your-api-key-here}
+      chat:
+        options:
+          model: claude-sonnet-4-6
+          max-tokens: 4096
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: ai-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.claimsplatform.*"
+
+rag:
+  chunk-size: 1000
+  chunk-overlap: 200
