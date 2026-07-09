@@ -20,6 +20,7 @@
   <img src="https://img.shields.io/badge/Elasticsearch-Search-yellow?style=flat-square&logo=elasticsearch" alt="Elasticsearch"/>
   <img src="https://img.shields.io/badge/Docker-Containerized-blue?style=flat-square&logo=docker" alt="Docker"/>
   <img src="https://img.shields.io/badge/PostgreSQL-pgvector-blue?style=flat-square&logo=postgresql" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Tests-JUnit%205%20%7C%20Testcontainers%20%7C%20Jasmine-brightgreen?style=flat-square" alt="Tests"/>
 </p>
 
 ---
@@ -281,6 +282,52 @@ claims-management-platform/
 - **AI Chat** — ChatGPT-style interface with suggestion chips and typing indicators
 - **Smart Search** — Semantic search with relevance-ranked results
 - **Policies** — Card grid with type-specific icons and coverage details
+
+---
+
+## Testing
+
+The project includes a full test suite covering unit, integration, and frontend tests.
+
+### Run Java Unit Tests
+
+```bash
+# All services at once
+mvn test
+
+# Individual service
+cd auth-service && mvn test
+cd policy-service && mvn test
+cd claims-service && mvn test
+cd ai-service && mvn test
+```
+
+### Run Integration Tests (requires Docker)
+
+Testcontainers spins up real PostgreSQL and Kafka containers automatically — no manual setup needed.
+
+```bash
+cd claims-service && mvn test -Dgroups=integration
+```
+
+### Run Angular Tests
+
+```bash
+cd frontend && ng test
+# Headless (CI)
+cd frontend && ng test --watch=false --browsers=ChromeHeadless
+```
+
+### Test Coverage
+
+| Layer | Framework | What's Covered |
+|-------|-----------|----------------|
+| Auth Service | JUnit 5 + Mockito | `AuthService` (register, login, role assignment), `JwtUtil` (token generation, validation, expiry) |
+| Policy Service | JUnit 5 + Mockito | `PolicyService` (CRUD, soft delete, customer validation) |
+| Claims Service | JUnit 5 + Mockito | `ClaimService` (lifecycle, stats aggregation, fraud threshold query) |
+| Claims Service | Testcontainers | Full integration against real PostgreSQL + Kafka (create, status update, pagination, adjuster assignment) |
+| AI Service | JUnit 5 + Mockito | `RagService` (demo mode routing, session persistence), `FraudDetectionService` (JSON parsing, fallback on AI failure) |
+| Angular | Jasmine + Karma | `AuthService`, `ClaimService` (all HTTP endpoints), `ClaimListComponent` (render, pagination, fraud gradient) |
 
 ---
 
