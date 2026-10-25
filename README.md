@@ -201,10 +201,10 @@ cd frontend && npm install && ng serve
 
 ## AI Features
 
-ClaimsAI integrates **Spring AI** with the **Claude** language model for three core capabilities:
+ClaimsAI integrates **Spring AI** with a large language model for three core capabilities:
 
 ### 1. Conversational Claims Assistant
-Ask natural language questions about claims, policies, and coverage. The RAG pipeline retrieves relevant document chunks from pgvector before generating context-aware responses.
+Ask natural language questions about claims, policies, and coverage. The RAG pipeline embeds the query using a local ONNX model (all-MiniLM-L6-v2), retrieves the top-5 document chunks from pgvector above a cosine similarity threshold of 0.7, and injects them into the system prompt before calling the LLM. If no chunks clear the threshold, the service returns a clear "not enough information" message without calling the LLM — preventing hallucination on empty context ([`0b7e229`](https://github.com/Pulkit2306/ClaimsAI/commit/0b7e229)).
 
 ### 2. Automated Fraud Detection
 Every new claim triggers a Kafka event consumed by the AI service. Claude analyzes the claim for fraud indicators and returns a risk score (0.0–1.0), red flags, and a recommendation (Approve / Investigate / Deny).
