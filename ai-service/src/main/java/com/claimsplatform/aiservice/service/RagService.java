@@ -7,11 +7,15 @@ import com.claimsplatform.aiservice.repository.ChatHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +24,7 @@ public class RagService {
 
     private final ChatClient.Builder chatClientBuilder;
     private final ChatHistoryRepository chatHistoryRepository;
+    private final VectorStore vectorStore;
 
     @Value("${spring.ai.anthropic.api-key:}")
     private String apiKey;
@@ -62,9 +67,27 @@ public class RagService {
 
     private String callAI(String message) {
         try {
+            List<Document> docs = vectorStore.similaritySearch(
+                SearchRequest.query(message).withTopK(5).withSimilarityThreshold(0.7)
+            );
+
+            if (docs.isEmpty()) {
+                log.info("No relevant documents found above threshold for query: {}", message);
+                return "I don't have enough relevant information in my knowledge base to answer that. " +
+                       "Try uploading relevant claim documents via the ingest endpoint first.";
+            }
+
+            String context = docs.stream()
+                    .map(Document::getContent)
+                    .collect(Collectors.joining("\n---\n"));
+
+            String systemPrompt = "You are an AI assistant for an insurance claims management platform. " +
+                    "Answer ONLY from the documents provided below. If the answer is not in the documents, say so.\n\n" +
+                    "Documents:\n" + context;
+
             return chatClientBuilder.build()
                     .prompt()
-                    .system("You are an AI assistant for an insurance claims management platform. Help adjusters and policyholders understand their claims, policies, and documents.")
+                    .system(systemPrompt)
                     .user(message)
                     .call()
                     .content();
